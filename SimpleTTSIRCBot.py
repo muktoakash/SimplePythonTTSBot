@@ -85,8 +85,10 @@ class IRCBot(threading.Thread):
 		voices = self.mytts.tts.engine.getProperty('voices')
 		if voices:
 			print("number of available voices {}".format(len(voices)))
+			# create a unique number from the userName string
 			mybytearray = bytearray(userName, 'utf-8')
 			myint = int.from_bytes(mybytearray, byteorder='big', signed=False)
+			# use modulo to define that number from the remainder divison of the number of available voices thus permanently assigning 
 			myDefaultVoiceNumber = myint%len(voices)
 			print("user {} : default voice number {} ".format(userName, myDefaultVoiceNumber))
 			self.mytts.tts.engine.setProperty('voice',voices[myDefaultVoiceNumber].id)
