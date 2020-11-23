@@ -3,12 +3,14 @@ import threading, time, pyttsx3
 
 
 class TTSThread(threading.Thread):
-    def __init__(self, rate=115, event=None):
+    def __init__(self, ttsReady = None, rate=115, event=None):
         super().__init__()
 
         if event:
             setattr(self, event, threading.Event())
 
+        self.ttsReady = ttsReady
+        
         self._cancel = threading.Event()
         self.rate = rate
         self.engine = None
@@ -63,7 +65,9 @@ class TTSThread(threading.Thread):
             self.on_finished_utterance(name, completed)
 
     def on_finished_utterance(self, name, completed):
-        pass
+        self.engine.endLoop()
+        if self.ttsReady:
+            self.ttsReady.set()
 
     def terminate(self):
         self._is_alive.clear()
@@ -80,3 +84,12 @@ class TTSThread(threading.Thread):
                     with self._text_lock:
                         engine.say(*self._text.pop(0))
                     engine.startLoop()
+
+class Voice(TTSThread):
+    def __init__(self):
+        self.completed = None
+        super().__init__(rate=115, event='completed')
+
+    def on_finished_utterance(self, name, completed):
+        print("utterance finished")
+        self.completed.set()

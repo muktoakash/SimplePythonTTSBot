@@ -20,10 +20,6 @@ print( voices[0])
 #engine.setProperty('voice', voices[0].id)  #changing index, changes voices. o for male
 engine.setProperty('voice', voices[0].id)   #changing index, changes voices. 1 for female
 
-engine.say("Hello World!")
-#engine.say('FractionalEyes : fi : WM : 1v1 Rank 42 : lvl 13')
-engine.runAndWait()
-#engine.stop()
 
 """Saving Voice to a file"""
 # On linux make sure that 'espeak' and 'ffmpeg' are installed
