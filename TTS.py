@@ -65,9 +65,12 @@ class TTSThread(threading.Thread):
             self.on_finished_utterance(name, completed)
 
     def on_finished_utterance(self, name, completed):
-        self.engine.endLoop()
+        print("on_finished_utterance was called") 
+        print(self.ttsReady)
         if self.ttsReady:
             self.ttsReady.set()
+            print ("ttsReady was set to {}".format(str(self.ttsReady.is_set())))
+        self.engine.endLoop()
 
     def terminate(self):
         self._is_alive.clear()

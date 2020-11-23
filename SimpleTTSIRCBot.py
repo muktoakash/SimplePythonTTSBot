@@ -31,6 +31,7 @@ class IRCBot(threading.Thread):
 		self.channel = "#xcomreborn"
 
 		self.ttsReady = threading.Event()
+		self.ttsReady.set()
 
 		self.mytts = ttsSpeech(ttsReady=self.ttsReady)
 		self.mytts.start()
@@ -94,24 +95,30 @@ class IRCBot(threading.Thread):
 				self.mytts.queue.put(message)
 				self.running = False
 		voices = self.mytts.tts.engine.getProperty('voices')
-		#if voices:
-		#	print("number of available voices {}".format(len(voices)))
-		#	# create a unique number from the userName string
-		#	mybytearray = bytearray(userName, 'utf-8')
-		#	myint = int.from_bytes(mybytearray, byteorder='big', signed=False)
-		#	# use modulo to define that number from the remainder divison of the number of available voices thus permanently assigning 
-		#	myDefaultVoiceNumber = myint%len(voices)
-		#	print("user {} : default voice number {} ".format(userName, myDefaultVoiceNumber))
+		if voices:
+			print("number of available voices {}".format(len(voices)))
+			# create a unique number from the userName string
+			mybytearray = bytearray(userName, 'utf-8')
+			myint = int.from_bytes(mybytearray, byteorder='big', signed=False)
+			# use modulo to define that number from the remainder divison of the number of available voices thus permanently assigning 
+			self.myDefaultVoiceNumber = myint%len(voices)
+			print("user {} : default voice number {} ".format(userName, self.myDefaultVoiceNumber))
 
 		# testing iteration of voices
-		self.myDefaultVoiceNumber += 1
-		if self.myDefaultVoiceNumber >= len(voices):
-			self.myDefaultVoiceNumber = 0
-
+		#self.myDefaultVoiceNumber += 1
+		#if self.myDefaultVoiceNumber >= len(voices):
+		#	self.myDefaultVoiceNumber = 0
+		userName = self.processUsername(userName)
 		self.mytts.queue.put(messageObject(userName=userName, message=message, voiceNumber=self.myDefaultVoiceNumber))
 
 		
 		print("number of threads {0}".format(threading.active_count()))
+
+
+	def processUsername(self, userName):
+		userName = str(userName).replace("_", " ")
+		return userName
+
 			
 class messageObject():
 
@@ -134,10 +141,14 @@ class ttsSpeech(threading.Thread):
 
 		messageStack = []
 		while (True):
-			messageStack.append(self.queue.get())
+			try:
+				messageStack.append(self.queue.get(block=False))
+			except:
+				pass
+			#print("is set {} and len messagestack {}".format(str(self.ttsReady.is_set()), str(len(messageStack))))
 
-			if self.ttsReady.is_set() or len(messageStack) == 1:
-				message = messageStack.pop()
+			if (self.ttsReady.is_set()) and len(messageStack) > 0:
+				message = messageStack.pop(0)
 				print("recived {}".format(message))
 				if message == "exit":
 					self.tts.terminate()
