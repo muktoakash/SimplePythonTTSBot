@@ -92,7 +92,7 @@ class IRCBot(threading.Thread):
 			myDefaultVoiceNumber = myint%len(voices)
 			print("user {} : default voice number {} ".format(userName, myDefaultVoiceNumber))
 			self.mytts.tts.engine.setProperty('voice',voices[myDefaultVoiceNumber].id)
-		self.mytts.queue.put(message)
+		self.mytts.queue.put(str(userName) + " said , " +  str(message))
 
 		
 		print("number of threads {0}".format(threading.active_count()))
