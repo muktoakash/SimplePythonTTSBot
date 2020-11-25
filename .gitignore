@@ -3,3 +3,9 @@ errors.log
 test.py
 test.py
 test2.py
+.vscode/settings.json
+data.json
+blacklist.json
+__pycache__/TTS.cpython-39.pyc
+__pycache__/TTS.cpython-38.pyc
+__pycache__/SimpleTTSIRCBot.cpython-39.pyc
