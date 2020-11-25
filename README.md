@@ -30,3 +30,5 @@ The bot commands are restricted to twitch channel moderators and are as follows:
 !ignore [] - ignores the following user name
 !unignore [] - unignores the following user name
 !blacklist - lists all the usernames in the blacklist (ignorelist)
+
+
