@@ -129,6 +129,7 @@ class IRCBot(threading.Thread):
 	def close(self):
 		self.running = False
 		self.blacklist.save() # save the blacklist to file
+		self.users.save() # save custom voices to file
 		logging.info("in close in thread")
 		try:
 			# send closing message immediately
@@ -193,14 +194,14 @@ class IRCBot(threading.Thread):
 		if len(wordList) > 1:
 			numberString = wordList[1]
 			try:
-				voiceNumber = int(numberString)
+				voiceNumber = int(numberString) - 1
 			except Exception as e:
 				logging.error(str(e))
 				self.SendPrivateMessageToIRC("!voice # must be a number")
 				return
 			voices = self.mytts.tts.engine.getProperty('voices')
 			if voices:
-				if voiceNumber > len(voices):
+				if voiceNumber > len(voices) -1:
 					self.SendPrivateMessageToIRC("!voice # must be less than {}.".format(str(len(voices))))
 					return
 				if voiceNumber < 0:
@@ -247,10 +248,10 @@ class IRCBot(threading.Thread):
 				if messageAllowed:
 					if self.users.isUserInList(userName):
 						user = self.users.getUser(userName)
-						myDefaultVoiceNumber = user.voiceNumber
+						myDefaultVoiceNumber = int(user.voiceNumber)
 					if not isinstance(myDefaultVoiceNumber, int):
 						return
-					if myDefaultVoiceNumber > len(voices):
+					if myDefaultVoiceNumber > (len(voices) -1):
 						return
 					if myDefaultVoiceNumber < 0:
 						return
@@ -270,7 +271,10 @@ class IRCBot(threading.Thread):
 		return message
 
 	def isMessageAllowed(self, message):
-		#implement all conditions that would cause the message to be soft rejected (not spoken)
+		if message:
+			if message[0] == "!":
+				return False
+		
 		return True
 
 	def listIgnore(self):
@@ -420,6 +424,7 @@ class ttsSpeech(threading.Thread):
 		threading.Thread.__init__(self)
 		self.queue = queue.Queue()
 		self.tts = TTS.TTSThread(ttsReady = self.ttsReady)
+		self.previousUserName = ""
 
 	def run(self):
 
@@ -441,7 +446,13 @@ class ttsSpeech(threading.Thread):
 					voices = self.tts.engine.getProperty('voices')
 					self.tts.engine.setProperty('voice',voices[message.voiceNumber].id)
 					print ("{} said , {} : voice {}".format(message.userName, message.message, message.voiceNumber))
-					self.tts.say("{} said , {}".format(message.userName, message.message))
+
+					if (self.previousUserName.lower() == message.userName.lower()):
+						self.tts.say(message.message)
+					else:
+						self.tts.say("{} said , {}".format(message.userName, message.message))
+
+					self.previousUserName = message.userName
 					self.ttsReady.clear()
 		print("exiting tts")
 	
