@@ -191,6 +191,50 @@ class IRCBot(threading.Thread):
 			if wordList[0] == "!alias":
 				self.setAlias(userName, message)
 
+			if wordList[0] == "!speed":
+				self.setSpeed(userName, message)
+
+	def setSpeed(self, userName, message):
+		wordList = message.split()
+		if len(wordList) > 1:
+			speed = wordList[1]
+			try:
+				speedNumber = int(speed)
+			except Exception as e:
+				logging.info(str(e))
+				logging.info("User message {} , value {} was not an int".format(message, speed))
+				try:
+					speeds = {
+					'slowest' : 100,
+					'slower' : 150,
+					'slow' : 180,
+					'normal' : 200,
+					'fast' : 220,
+					'faster' : 250,
+					'fastest' : 300,
+					}
+					speedNumber = speeds.get(speed.lower())
+				except Exception as e:
+					logging.info("problem setting string {} to a defined speed {}.".format(speed, str(speeds)))
+					return
+				lowerRange = 100
+				upperRange = 300
+				speedsString = ""
+				for key in speeds:
+					speedsString += " {} ".format(key)
+				if not (100 <= speedNumber <= 300):
+					self.SendPrivateMessageToIRC("The value {} is outside the allowed range. It should be between {} and {} or one of the following : {}.".format(speed, lowerRange, upperRange, speedsString))
+					return # returns because speedNumber is outside range
+
+				if len(wordList) > 2:
+					userName = self.escape(wordList[2]) # switches userName with second input
+				user = self.users.getUser(userName)
+				if user:
+					user.voiceRate = speed
+				else:
+					self.users.addUser(userName, voiceRate=speedNumber)
+				self.SendPrivateMessageToIRC("{}'s voice rate has been set to {}".format(userName, speed))	
+
 	def setAlias(self, userName, message):
 		wordList = message.split()
 		if len(wordList) > 1:
@@ -276,7 +320,8 @@ class IRCBot(threading.Thread):
 				if messageAllowed:
 					if self.users.isUserInList(userName):
 						user = self.users.getUser(userName)
-						myDefaultVoiceNumber = int(user.voiceNumber)
+						if user.voiceNumber:
+							myDefaultVoiceNumber = int(user.voiceNumber) # set the saved voice number if it exists
 						if user.alias:
 							userName = user.alias # set username to be spoken to alias if it exists
 					if not isinstance(myDefaultVoiceNumber, int):
