@@ -9,6 +9,7 @@ import json # for saving and loading to json files
 import os # for operating system functions
 import re # for regular expressions
 import collections # for deque
+import jsonpickle # allows saving and reloading of the twitchUser object list to file in json format
 
 for handler in logging.root.handlers[:]:
 	logging.root.removeHandler(handler)
@@ -384,7 +385,7 @@ class twitchUsers():
 			if (os.path.isfile('data.json')):
 				with open('data.json') as json_file:
 					data = json.load(json_file)
-					self.data = data
+					self.users = jsonpickle.decode(data)
 					logging.info("data loaded sucessfully")
 		except Exception as e:
 			logging.error("Problem in load")
@@ -392,8 +393,9 @@ class twitchUsers():
 
 	def save(self):
 		try:
+			objectToDump = jsonpickle.encode(self.users)
 			with open('data.json' , 'w') as outfile:
-				json.dump(self.users, outfile)
+				json.dump(objectToDump, outfile)
 		except Exception as e:
 			logging.error("Problem in save")
 			logging.error(str(e))
@@ -405,6 +407,12 @@ class chatUser():
 		self.userName = userName
 		self.voiceNumber = voiceNumber
 		self.voiceRate = voiceRate
+
+	def __str__(self):
+		return "userName : {} \n voiceNumber : {} \n voiceRate {}".format(self.userName, self.voiceNumber, self.voiceRate)
+
+	def __repr__(self):
+		return str(self)
 
 
 class messageObject():
