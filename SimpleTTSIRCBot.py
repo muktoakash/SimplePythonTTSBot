@@ -180,9 +180,11 @@ class IRCBot(threading.Thread):
 
 		if len(wordList) > 1:
 			if wordList[0] == "!ignore":
-				self.blacklist.addUser(wordList[1]) # check if user was added				
+				self.blacklist.addUser(wordList[1]) # check if user was added.
+				self.blacklist.save() # save to file.			
 			if wordList[0] == "!unignore":
-				self.blacklist.removeUser(wordList[1]) # check that user existed and was removed
+				self.blacklist.removeUser(wordList[1]) # check that user existed and was removed.
+				self.blacklist.save() # save to file.
 
 			if wordList[0] == "!voice":
 				self.setVoice(userName, message)
@@ -195,6 +197,7 @@ class IRCBot(threading.Thread):
 
 	def setSpeed(self, userName, message):
 		wordList = message.split()
+		speedNumber = 200
 		if len(wordList) > 1:
 			speed = wordList[1]
 			try:
@@ -223,32 +226,34 @@ class IRCBot(threading.Thread):
 					speedsString += " {} ".format(key)
 				if not (100 <= speedNumber <= 300):
 					self.SendPrivateMessageToIRC("The value {} is outside the allowed range. It should be between {} and {} or one of the following : {}.".format(speed, lowerRange, upperRange, speedsString))
-					return # returns because speedNumber is outside range
+					return # returns because speedNumber is outside range.
 
 				if len(wordList) > 2:
-					userName = self.escape(wordList[2]) # switches userName with second input
+					userName = self.escape(wordList[2]) # switches userName with second input.
 				user = self.users.getUser(userName)
 				if user:
-					user.voiceRate = speed
+					user.voiceRate = speedNumber
 				else:
 					self.users.addUser(userName, voiceRate=speedNumber)
-				self.SendPrivateMessageToIRC("{}'s voice rate has been set to {}".format(userName, speed))	
+				self.SendPrivateMessageToIRC("{}'s voice rate has been set to {}, ({})".format(userName, speed, speedNumber))
+				self.users.save() # save user data to file.
 
 	def setAlias(self, userName, message):
 		wordList = message.split()
 		if len(wordList) > 1:
 			alias = self.escape(wordList[1])
 			if len(wordList) > 2:
-				userName = self.escape(wordList[2]) # switches userName with second input
+				userName = self.escape(wordList[2]) # switches userName with second input.
 			user = self.users.getUser(userName)
 			if user:
 				user.alias = alias
 			else:
 				self.users.addUser(userName, alias=alias)
 			self.SendPrivateMessageToIRC("{}'s alias has been set to {}".format(userName, alias))
+			self.users.save() # save user data to file.
 
 	def escape(self, mystring):
-		mystring = mystring.replace("'","").replace('"',"").replace("\\","") # remove inverted commas and backslash escapes from user input
+		mystring = mystring.replace("'","").replace('"',"").replace("\\","") # remove inverted commas and backslash escapes from user input.
 		return mystring
 
 	def setVoice(self, userName, message):
@@ -256,7 +261,7 @@ class IRCBot(threading.Thread):
 		if len(wordList) > 1:
 			numberString = wordList[1]
 			if len(wordList) > 2:
-				userName = self.escape(wordList[2]) # switches userName with second input
+				userName = self.escape(wordList[2]) # switches userName with second input.
 			try:
 				voiceNumber = int(numberString) - 1
 			except Exception as e:
@@ -276,7 +281,11 @@ class IRCBot(threading.Thread):
 				user.voiceNumber = voiceNumber
 			else:
 				self.users.addUser(userName, voiceNumber=voiceNumber)
-			self.SendPrivateMessageToIRC("{}'s voice has been set to {}".format(userName, voiceNumber))	
+			try:
+				self.SendPrivateMessageToIRC("{}'s voice has been set to {}".format(userName, int(voiceNumber) + 1))
+				self.users.save() # save user data to file
+			except Exception as e:
+				logging.error(str(e))
 
 
 	def getVoicesAvailableString(self):
@@ -303,15 +312,16 @@ class IRCBot(threading.Thread):
 		try:
 			voices = self.mytts.tts.engine.getProperty('voices')
 			myDefaultVoiceNumber = 0
+			voiceRate = 200
 			if voices:
-				# create a unique number from the userName string
+				# create a unique number from the userName string.
 				mybytearray = bytearray(userName, 'utf-8')
 				myint = int.from_bytes(mybytearray, byteorder='big', signed=False)
-				# use modulo to define that number from the remainder divison of the number of available voices thus permanently assigning 
+				# use modulo to define that number from the remainder divison of the number of available voices thus permanently assigning.
 				myDefaultVoiceNumber = myint%len(voices)
 				print("user {} : default voice number {} ".format(userName, myDefaultVoiceNumber))
 
-			ignoredUserNames = self.blacklist.users # gets current blacklist
+			ignoredUserNames = self.blacklist.users # gets current blacklist.
 			if userName.lower() not in map(str.lower, ignoredUserNames):
 				userName = self.preprocessUsername(userName)
 				message = self.preprocessMessage(message)
@@ -320,9 +330,11 @@ class IRCBot(threading.Thread):
 					if self.users.isUserInList(userName):
 						user = self.users.getUser(userName)
 						if user.voiceNumber:
-							myDefaultVoiceNumber = int(user.voiceNumber) # set the saved voice number if it exists
+							myDefaultVoiceNumber = int(user.voiceNumber) # set the saved voice number if it exists.
 						if user.alias:
-							userName = user.alias # set username to be spoken to alias if it exists
+							userName = user.alias # set username to be spoken to alias if it exists.
+						if user.voiceRate:
+							voiceRate = user.voiceRate # set voiceRate to be spoken if it exists.
 					if not isinstance(myDefaultVoiceNumber, int):
 						return
 					if myDefaultVoiceNumber > (len(voices) -1):
@@ -330,7 +342,7 @@ class IRCBot(threading.Thread):
 					if myDefaultVoiceNumber < 0:
 						return
 					
-					self.mytts.queue.put(messageObject(userName=userName, message=message, voiceNumber=myDefaultVoiceNumber))
+					self.mytts.queue.put(messageObject(userName=userName, message=message, voiceNumber=myDefaultVoiceNumber, voiceRate=voiceRate))
 			print("number of threads {0}".format(threading.active_count()))
 		except Exception as e:
 			logging.error(str(e))
@@ -346,9 +358,12 @@ class IRCBot(threading.Thread):
 		return message
 
 	def isMessageAllowed(self, message):
+		# a series of conditions to test against if they appear return False (message rejected)
 		if message:
 			if message[0] == "!" or message[0] == "#":
 				return False
+		if "http" in message:
+			return False
 		
 		return True
 
@@ -486,10 +501,6 @@ class chatUser():
 		self.voiceNumber = voiceNumber
 		self.voiceRate = voiceRate
 
-		if self.voiceNumber is None:
-			pass
-
-
 	def __str__(self):
 		return "userName : {}  alias : {}  voiceNumber : {}  voiceRate {}".format(self.userName, self.alias, self.voiceNumber, self.voiceRate)
 
@@ -535,6 +546,7 @@ class ttsSpeech(threading.Thread):
 				if isinstance(message, messageObject):
 					voices = self.tts.engine.getProperty('voices')
 					self.tts.engine.setProperty('voice',voices[message.voiceNumber].id)
+					self.tts.engine.setProperty('rate', message.voiceRate)
 					print ("{} said , {} : voice {}".format(message.userName, message.message, message.voiceNumber))
 
 					if (self.previousUserName.lower() == message.userName.lower()):
