@@ -172,11 +172,11 @@ class IRCBot(threading.Thread):
 				self.running = False		
 
 		if wordList:
-			if wordList[0].lower() == "!hello":
-				self.SendPrivateMessageToIRC("Hi back!")			
+			#if wordList[0].lower() == "!hello":
+			#	self.SendPrivateMessageToIRC("Hi back!")			
 			if wordList[0].lower() == "!voices":
 				self.SendPrivateMessageToIRC(self.getVoicesAvailableString())
-			if wordList[0].lower() == "!ignorelist":
+			if wordList[0].lower() == "!blacklist" or "!ignorelist":
 				self.listIgnore()
 
 		if len(wordList) > 1:
