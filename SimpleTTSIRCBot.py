@@ -175,7 +175,7 @@ class IRCBot(threading.Thread):
 		
 			if wordList[0].lower() == "!voices":
 				self.SendPrivateMessageToIRC(self.getVoicesAvailableString())
-			if wordList[0].lower() == "!blacklist" or "!ignorelist":
+			if (wordList[0].lower() == "!blacklist") or (wordList[0].lower() == "!ignorelist"):
 				self.listIgnore()
 
 		if len(wordList) > 1:
@@ -183,7 +183,6 @@ class IRCBot(threading.Thread):
 				self.blacklist.addUser(wordList[1]) # check if user was added				
 			if wordList[0] == "!unignore":
 				self.blacklist.removeUser(wordList[1]) # check that user existed and was removed
-				pass
 
 			if wordList[0] == "!voice":
 				self.setVoice(userName, message)
@@ -191,7 +190,7 @@ class IRCBot(threading.Thread):
 			if wordList[0] == "!alias":
 				self.setAlias(userName, message)
 
-			if wordList[0] == "!speed":
+			if (wordList[0] == "!speed") or (wordList[0] == "!voicespeed"):
 				self.setSpeed(userName, message)
 
 	def setSpeed(self, userName, message):
