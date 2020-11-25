@@ -194,22 +194,26 @@ class IRCBot(threading.Thread):
 	def setAlias(self, userName, message):
 		wordList = message.split()
 		if len(wordList) > 1:
-			alias = wordList[1]
+			alias = self.escape(wordList[1])
 			if len(wordList) > 2:
-				userName = wordList[2] # switches userName with second input
+				userName = self.escape(wordList[2]) # switches userName with second input
 			user = self.users.getUser(userName)
 			if user:
 				user.alias = alias
 			else:
 				self.users.addUser(userName, alias=alias)
-			self.SendPrivateMessageToIRC("{}'s alias has been set to {}".format(userName, alias))	
+			self.SendPrivateMessageToIRC("{}'s alias has been set to {}".format(userName, alias))
+
+	def escape(self, mystring):
+		mystring = mystring.replace("'","").replace('"',"").replace("\\","") # remove inverted commas and backslash escapes from user input
+		return mystring
 
 	def setVoice(self, userName, message):
 		wordList = message.split()
 		if len(wordList) > 1:
 			numberString = wordList[1]
 			if len(wordList) > 2:
-				userName = wordList[2] # switches userName with second input
+				userName = self.escape(wordList[2]) # switches userName with second input
 			try:
 				voiceNumber = int(numberString) - 1
 			except Exception as e:
@@ -273,12 +277,15 @@ class IRCBot(threading.Thread):
 					if self.users.isUserInList(userName):
 						user = self.users.getUser(userName)
 						myDefaultVoiceNumber = int(user.voiceNumber)
+						if user.alias:
+							userName = user.alias # set username to be spoken to alias if it exists
 					if not isinstance(myDefaultVoiceNumber, int):
 						return
 					if myDefaultVoiceNumber > (len(voices) -1):
 						return
 					if myDefaultVoiceNumber < 0:
 						return
+					
 					self.mytts.queue.put(messageObject(userName=userName, message=message, voiceNumber=myDefaultVoiceNumber))
 			print("number of threads {0}".format(threading.active_count()))
 		except Exception as e:
@@ -325,7 +332,7 @@ class BlackList():
 		self.users = []
 
 	def addUser(self, userName):
-		self.users.append(userName)
+		self.users.append(self.escape(userName))
 		self.users = list(set(self.users))
 		#ensure all users are unique
 
@@ -336,6 +343,10 @@ class BlackList():
 		except Exception as e:
 			logging.error(str(e))
 			return False # user not in list
+
+	def escape(self, mystring):
+		mystring = mystring.replace("'","").replace('"',"").replace("\\", "") # remove inverted commas and backslash escapes from user input
+		return mystring
 
 	def load(self):
 		try:
