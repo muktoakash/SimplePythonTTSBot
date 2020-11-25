@@ -155,7 +155,7 @@ class IRCBot(threading.Thread):
 			try:
 				message = self.ircMessageBuffer.popleft()
 				self.irc.send(("PRIVMSG " + self.channel + " :" + str(message) + "\r\n").encode('utf8'))
-				self.CheckForUserCommand(self.nick, message) # loopback for text to speech if needed but user will likely be muted anyway.
+				self.sendToTextToSpeech(self.nick, message) # loopback for text to speech if needed but user will likely be added to ingnore anyway.
 			except Exception as e:
 				logging.error("IRC send error:")
 				logging.error("In IRCSendCalledEveryThreeSeconds")
@@ -172,8 +172,7 @@ class IRCBot(threading.Thread):
 				self.running = False		
 
 		if wordList:
-			#if wordList[0].lower() == "!hello":
-			#	self.SendPrivateMessageToIRC("Hi back!")			
+		
 			if wordList[0].lower() == "!voices":
 				self.SendPrivateMessageToIRC(self.getVoicesAvailableString())
 			if wordList[0].lower() == "!blacklist" or "!ignorelist":
@@ -181,8 +180,7 @@ class IRCBot(threading.Thread):
 
 		if len(wordList) > 1:
 			if wordList[0] == "!ignore":
-				self.blacklist.addUser(wordList[1]) # check if user was added
-				pass
+				self.blacklist.addUser(wordList[1]) # check if user was added				
 			if wordList[0] == "!unignore":
 				self.blacklist.removeUser(wordList[1]) # check that user existed and was removed
 				pass
@@ -190,10 +188,28 @@ class IRCBot(threading.Thread):
 			if wordList[0] == "!voice":
 				self.setVoice(userName, message)
 
+			if wordList[0] == "!alias":
+				self.setAlias(userName, message)
+
+	def setAlias(self, userName, message):
+		wordList = message.split()
+		if len(wordList) > 1:
+			alias = wordList[1]
+			if len(wordList) > 2:
+				userName = wordList[2] # switches userName with second input
+			user = self.users.getUser(userName)
+			if user:
+				user.alias = alias
+			else:
+				self.users.addUser(userName, alias=alias)
+			self.SendPrivateMessageToIRC("{}'s alias has been set to {}".format(userName, alias))	
+
 	def setVoice(self, userName, message):
 		wordList = message.split()
 		if len(wordList) > 1:
 			numberString = wordList[1]
+			if len(wordList) > 2:
+				userName = wordList[2] # switches userName with second input
 			try:
 				voiceNumber = int(numberString) - 1
 			except Exception as e:
@@ -208,9 +224,12 @@ class IRCBot(threading.Thread):
 				if voiceNumber < 0:
 					self.SendPrivateMessageToIRC("!voice # cannot be less than 0.")
 					return
-			self.users.addUser(userName, voiceNumber=voiceNumber)
-				
-
+			user = self.users.getUser(userName)
+			if user:
+				user.voiceNumber = voiceNumber
+			else:
+				self.users.addUser(userName, voiceNumber=voiceNumber)
+			self.SendPrivateMessageToIRC("{}'s voice has been set to {}".format(userName, voiceNumber))	
 
 
 	def getVoicesAvailableString(self):
@@ -226,7 +245,11 @@ class IRCBot(threading.Thread):
 			return "Could not get voices."
 
 	def CheckForUserCommand(self, userName, message):
-		pass
+		wordList = message.split()
+		if wordList:
+			#if wordList[0].lower() == "!ignoreme": # add this if you want users to be able to add themselves to the blacklist
+			#	self.blacklist.addUser(userName)
+			pass
 
 
 	def sendToTextToSpeech(self, userName, message):
@@ -273,7 +296,7 @@ class IRCBot(threading.Thread):
 
 	def isMessageAllowed(self, message):
 		if message:
-			if message[0] == "!":
+			if message[0] == "!" or message[0] == "#":
 				return False
 		
 		return True
@@ -352,13 +375,12 @@ class twitchUsers():
 		else:
 			return False # user not in list
 
-	def addUser(self, userName, voiceNumber = None, voiceRate = 200):
+	def addUser(self, userName, alias = None,voiceNumber = None, voiceRate = 200):
 		if self.isUserInList(userName):
-			user = self.getUser(userName)
-			user.voiceNumber = voiceNumber
-			user.voiceRate = voiceRate
+			return False
 		else:
-			self.users.append(chatUser(userName, voiceNumber=voiceNumber, voiceRate=voiceRate))
+			self.users.append(chatUser(userName, alias=alias,voiceNumber=voiceNumber, voiceRate=voiceRate))
+			return True
 
 	def special_match(self, strg, search=re.compile(r'^[a-zA-Z0-9][\w]{3,24}$').search):
 		if strg == "":
@@ -403,13 +425,18 @@ class twitchUsers():
 
 class chatUser():
 	# This class is used to hold a permanent record of the chat user in memory if they are ignored or their voice has changed for the auto assigned default 
-	def __init__(self, userName = None, voiceNumber = None, voiceRate = 200):
+	def __init__(self, userName = None, alias = None,voiceNumber = None, voiceRate = 200):
 		self.userName = userName
+		self.alias = alias
 		self.voiceNumber = voiceNumber
 		self.voiceRate = voiceRate
 
+		if self.voiceNumber is None:
+			pass
+
+
 	def __str__(self):
-		return "userName : {} \n voiceNumber : {} \n voiceRate {}".format(self.userName, self.voiceNumber, self.voiceRate)
+		return "userName : {}  alias : {}  voiceNumber : {}  voiceRate {}".format(self.userName, self.alias, self.voiceNumber, self.voiceRate)
 
 	def __repr__(self):
 		return str(self)
