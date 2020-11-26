@@ -253,9 +253,9 @@ class IRCBot(threading.Thread):
 			self.users.save() # save user data to file.
 
 	def sanitize(self, mystring):
-		mystring = mystring.replace("<3","WUB")
-		mystring = mystring.replace("'","").replace('"',"").replace("\\","").replace("<","").replace(">","") # remove inverted commas and backslash escapes from user input.
-		mystring = re.escape(mystring)
+		mystring = mystring.replace("<3","wub")
+		allowedCharacterPattern = "[^a-zA-Z0-9- .&,%£+=?*@!#]" 
+		mystring = re.sub( allowedCharacterPattern, '',  mystring)
 		return mystring
 
 	def setVoice(self, userName, message):
