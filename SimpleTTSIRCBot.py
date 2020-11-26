@@ -229,7 +229,7 @@ class IRCBot(threading.Thread):
 					return # returns because speedNumber is outside range.
 
 				if len(wordList) > 2:
-					userName = self.escape(wordList[2]) # switches userName with second input.
+					userName = self.sanitize(wordList[2]) # switches userName with second input.
 				user = self.users.getUser(userName)
 				if user:
 					user.voiceRate = speedNumber
@@ -241,9 +241,9 @@ class IRCBot(threading.Thread):
 	def setAlias(self, userName, message):
 		wordList = message.split()
 		if len(wordList) > 1:
-			alias = self.escape(wordList[1])
+			alias = self.sanitize(wordList[1])
 			if len(wordList) > 2:
-				userName = self.escape(wordList[2]) # switches userName with second input.
+				userName = self.sanitize(wordList[2]) # switches userName with second input.
 			user = self.users.getUser(userName)
 			if user:
 				user.alias = alias
@@ -252,8 +252,9 @@ class IRCBot(threading.Thread):
 			self.SendPrivateMessageToIRC("{}'s alias has been set to {}".format(userName, alias))
 			self.users.save() # save user data to file.
 
-	def escape(self, mystring):
+	def sanitize(self, mystring):
 		mystring = mystring.replace("'","").replace('"',"").replace("\\","") # remove inverted commas and backslash escapes from user input.
+		mystring = re.escape(mystring)
 		return mystring
 
 	def setVoice(self, userName, message):
@@ -261,7 +262,7 @@ class IRCBot(threading.Thread):
 		if len(wordList) > 1:
 			numberString = wordList[1]
 			if len(wordList) > 2:
-				userName = self.escape(wordList[2]) # switches userName with second input.
+				userName = self.sanitize(wordList[2]) # switches userName with second input.
 			try:
 				voiceNumber = int(numberString) - 1
 			except Exception as e:
@@ -391,7 +392,7 @@ class BlackList():
 		self.users = []
 
 	def addUser(self, userName):
-		self.users.append(self.escape(userName))
+		self.users.append(self.sanitize(userName))
 		self.users = list(set(self.users))
 		#ensure all users are unique
 
@@ -403,8 +404,9 @@ class BlackList():
 			logging.error(str(e))
 			return False # user not in list
 
-	def escape(self, mystring):
+	def sanitize(self, mystring):
 		mystring = mystring.replace("'","").replace('"',"").replace("\\", "") # remove inverted commas and backslash escapes from user input
+		mystring = re.escape(mystring)
 		return mystring
 
 	def load(self):
