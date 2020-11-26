@@ -199,7 +199,7 @@ class IRCBot(threading.Thread):
 		wordList = message.split()
 		speedNumber = 200
 		if len(wordList) > 1:
-			speed = wordList[1]
+			speed = self.sanitize(wordList[1])
 			try:
 				speedNumber = int(speed)
 			except Exception as e:
@@ -261,7 +261,7 @@ class IRCBot(threading.Thread):
 	def setVoice(self, userName, message):
 		wordList = message.split()
 		if len(wordList) > 1:
-			numberString = wordList[1]
+			numberString = self.sanitize(wordList[1])
 			if len(wordList) > 2:
 				userName = self.sanitize(wordList[2]) # switches userName with second input.
 			try:
@@ -351,10 +351,12 @@ class IRCBot(threading.Thread):
 
 
 	def preprocessUsername(self, userName):
+		userName = self.sanitize(userName)
 		userName = str(userName).replace("_", " ") # replaces underscore with space
 		return userName
 
 	def preprocessMessage(self, message):
+		message = self.sanitize(message)
 		message  = str(message).replace("_", " ") # replaces underscore with space
 		#implement character removals etc here.
 		return message
