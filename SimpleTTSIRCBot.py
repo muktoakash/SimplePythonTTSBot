@@ -253,7 +253,8 @@ class IRCBot(threading.Thread):
 			self.users.save() # save user data to file.
 
 	def sanitize(self, mystring):
-		mystring = mystring.replace("'","").replace('"',"").replace("\\","") # remove inverted commas and backslash escapes from user input.
+		mystring = mystring.replace("<3","WUB")
+		mystring = mystring.replace("'","").replace('"',"").replace("\\","").replace("<","").replace(">","") # remove inverted commas and backslash escapes from user input.
 		mystring = re.escape(mystring)
 		return mystring
 
