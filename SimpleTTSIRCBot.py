@@ -304,6 +304,8 @@ class IRCBot(threading.Thread):
 				if isinstance(item, pyttsx3.voice.Voice):
 					outputString += " #{} {}".format(str(idx + 1), str(item.name)) 
 			print ("output string : {}".format(str(outputString)))
+			outputString = outputString.replace("Microsoft ", "") # remove the word microsoft
+			outputString = outputString.replace(" English " , "") # remove the word English 
 			return outputString
 		except Exception as e:
 			logging.error(str(e))
