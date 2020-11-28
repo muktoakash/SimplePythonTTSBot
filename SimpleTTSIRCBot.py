@@ -154,8 +154,11 @@ class IRCBot(threading.Thread):
 		if (self.ircMessageBuffer):
 			try:
 				message = self.ircMessageBuffer.popleft()
-				self.irc.send(("PRIVMSG " + self.channel + " :" + str(message[:500]) + "\r\n").encode('utf8'))
-				self.sendToTextToSpeech(self.nick, message) # loopback for text to speech if needed but user will likely be added to ingnore anyway.
+				twitchMaxMessageSize = 500
+				reasonablesizedstrings = [message[i:i+twitchMaxMessageSize] for i in range(0 , len(message), twitchMaxMessageSize)]
+				for item in reasonablesizedstrings:
+					self.irc.send(("PRIVMSG " + self.channel + " :" + str(item) + "\r\n").encode('utf8'))
+					self.sendToTextToSpeech(self.nick, message) # loopback for text to speech if needed but user will likely be added to ingnore anyway.
 			except Exception as e:
 				logging.error("IRC send error:")
 				logging.error("In IRCSendCalledEveryThreeSeconds")
