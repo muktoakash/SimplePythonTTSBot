@@ -299,13 +299,16 @@ class IRCBot(threading.Thread):
 		try:
 			voices = self.mytts.tts.engine.getProperty('voices')
 			print("got voices : {} : ".format(str(voices)))
-			outputString = "Voices available : {} :".format(len(voices))
+			outputString = "{} Voices available : ".format(len(voices))
 			for idx,item in enumerate(voices):
 				if isinstance(item, pyttsx3.voice.Voice):
 					outputString += " #{} {}".format(str(idx + 1), str(item.name)) 
 			print ("output string : {}".format(str(outputString)))
 			outputString = outputString.replace("Microsoft ", "") # remove the word microsoft
 			outputString = outputString.replace(" English " , "") # remove the word English 
+			outputString = outputString.replace("Desktop ", "" ) # remove the word Desktop
+			outputString = outputString.replace("Mobile ", "") # remove the word Mobile
+			outputString = outputString.replace("-" , "") # remove the character "-"
 			return outputString
 		except Exception as e:
 			logging.error(str(e))
