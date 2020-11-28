@@ -154,7 +154,7 @@ class IRCBot(threading.Thread):
 		if (self.ircMessageBuffer):
 			try:
 				message = self.ircMessageBuffer.popleft()
-				self.irc.send(("PRIVMSG " + self.channel + " :" + str(message) + "\r\n").encode('utf8'))
+				self.irc.send(("PRIVMSG " + self.channel + " :" + str(message[:500]) + "\r\n").encode('utf8'))
 				self.sendToTextToSpeech(self.nick, message) # loopback for text to speech if needed but user will likely be added to ingnore anyway.
 			except Exception as e:
 				logging.error("IRC send error:")
@@ -172,9 +172,11 @@ class IRCBot(threading.Thread):
 				self.running = False		
 
 		if wordList:
-		
+			print ("wordlist : {}".format(str(wordList)))
 			if wordList[0].lower() == "!voices":
+				print("in voices.")
 				self.SendPrivateMessageToIRC(self.getVoicesAvailableString())
+				print("voices finished.")
 			if (wordList[0].lower() == "!blacklist") or (wordList[0].lower() == "!ignorelist"):
 				self.listIgnore()
 
@@ -293,10 +295,12 @@ class IRCBot(threading.Thread):
 	def getVoicesAvailableString(self):
 		try:
 			voices = self.mytts.tts.engine.getProperty('voices')
+			print("got voices : {} : ".format(str(voices)))
 			outputString = "Voices available : {} :".format(len(voices))
 			for idx,item in enumerate(voices):
 				if isinstance(item, pyttsx3.voice.Voice):
 					outputString += " #{} {}".format(str(idx + 1), str(item.name)) 
+			print ("output string : {}".format(str(outputString)))
 			return outputString
 		except Exception as e:
 			logging.error(str(e))
