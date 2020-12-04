@@ -99,12 +99,13 @@ class IRCBot(threading.Thread):
 					if (len(word) >= 5) and (word[2] == "PRIVMSG"):
 						userName = word[1]
 						userName = userName[1:]
-						userName = userName.split("!")[0]
+						userName = userName.split("!")[0] # this is the lowercase userName
+						userName = self.find_between(word[0], "display-name=", ";") # this is the display name that can be changed and upper case.
 						message = " ".join(word [4:])
 						message = message[1:]
 						isMod = bool(int(self.find_between(word[0], "mod=" , ";"))) # returns true if 1 false if 0
 						print("user : {} , message {} , is_mod {}".format(userName, message, isMod))
-						if isMod or (userName == self.broadcasterName):
+						if isMod or (userName.lower() == self.broadcasterName.lower()):
 							self.checkForModCommand(userName, message) # check for mod user commands
 						self.CheckForUserCommand(userName, message) # check for standard user commands
 						self.sendToTextToSpeech(userName, message) # process messages for text to speech
@@ -168,7 +169,7 @@ class IRCBot(threading.Thread):
 	def checkForModCommand(self,userName, message):
 		wordList = message.split()
 
-		if (userName == self.broadcasterName):
+		if (userName.lower() == self.broadcasterName.lower()):
 			if (message == "exit"):
 				print("Trying to exit.")
 				self.mytts.queue.put(message)
@@ -259,7 +260,7 @@ class IRCBot(threading.Thread):
 
 	def sanitize(self, mystring):
 		mystring = mystring.replace("<3","wub")
-		allowedCharacterPattern = "[^a-zA-Z0-9- .&,%£+=?*@!#]" 
+		allowedCharacterPattern = "[^a-zA-Z0-9 -.&,%£+=?*@!#]" 
 		mystring = re.sub( allowedCharacterPattern, '',  mystring)
 		return mystring
 
