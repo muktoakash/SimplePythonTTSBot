@@ -325,6 +325,8 @@ class IRCBot(threading.Thread):
 
 	def sendToTextToSpeech(self, userName, message):
 		try:
+			print("In sendToTextToSpeech")
+			
 			voices = self.mytts.tts.engine.getProperty('voices')
 			myDefaultVoiceNumber = 0
 			voiceRate = 200
@@ -357,7 +359,9 @@ class IRCBot(threading.Thread):
 					if myDefaultVoiceNumber < 0:
 						return
 					
-					self.mytts.queue.put(messageObject(userName=userName, message=message, voiceNumber=myDefaultVoiceNumber, voiceRate=voiceRate))
+					theMessage = messageObject(userName=userName, message=message, voiceNumber=myDefaultVoiceNumber, voiceRate=voiceRate)
+					print("putting message into queue {}".format(theMessage))
+					self.mytts.queue.put(theMessage)
 			print("number of threads {0}".format(threading.active_count()))
 		except Exception as e:
 			logging.error(str(e))
@@ -534,6 +538,12 @@ class messageObject():
 		self.message = message
 		self.voiceNumber = voiceNumber
 		self.voiceRate = voiceRate
+
+	def __str__(self):
+		return "userName {}, message {}, voiceNumber {}, voiceRate {}".format(self.userName, self.message, self.voiceNumber, self.voiceRate)
+
+	def __repr__(self):
+		return self.__str__()
 
 
 class ttsSpeech(threading.Thread):
