@@ -12,3 +12,4 @@ __pycache__/SimpleTTSIRCBot.cpython-39.pyc
 test.mp3
 .vscode/.ropeproject/config.py
 .vscode/.ropeproject/objectdb
+__pycache__/TTS.cpython-37.pyc
