@@ -134,6 +134,8 @@ class IRCBot(threading.Thread):
 		self.running = False
 		self.blacklist.save() # save the blacklist to file
 		self.users.save() # save custom voices to file
+		if self.mytts:
+			self.mytts.queue.put("exit")
 		logging.info("in close in thread")
 		try:
 			# send closing message immediately
@@ -211,7 +213,8 @@ class IRCBot(threading.Thread):
 
 	def setVolume(self, userName, message):
 		wordList = message.split()
-		if wordList > 1:
+		print("Got to set Volume")
+		if len(wordList) > 1:
 			try:
 				volume = float(wordList[1])
 			except Exception as e:
@@ -221,8 +224,11 @@ class IRCBot(threading.Thread):
 			if self.mytts:
 				if self.mytts.tts:
 					if self.mytts.tts.engine: 
-						self.mytts.tts.engine.setProperty('volume',volume)
-						self.SendPrivateMessageToIRC("TTS Volume Set to : {}".format(volume))
+						if 0 <= volume <= 1:
+							self.mytts.tts.engine.setProperty('volume',volume)
+							self.SendPrivateMessageToIRC("TTS Volume Set to : {}".format(volume))
+						else:
+							self.SendPrivateMessageToIRC("TTS Volume Must be between 0 and 1.")
 
 
 	def setSpeed(self, userName, message):
@@ -578,11 +584,12 @@ class ttsSpeech(threading.Thread):
 		self.queue = queue.Queue()
 		self.tts = TTS.TTSThread(ttsReady = self.ttsReady)
 		self.previousUserName = ""
+		self.running = True
 
 	def run(self):
 
 		messageStack = []
-		while (True):
+		while (self.running):
 			try:
 				messageStack.append(self.queue.get(block=False))
 			except:
@@ -613,6 +620,11 @@ class ttsSpeech(threading.Thread):
 					self.previousUserName = message.userName
 					self.ttsReady.clear()
 		print("exiting tts")
+
+	def close(self):
+		self.running = False
+		if self.tts:
+			self.tts.terminate()
 	
 
 # The program propper starts here
