@@ -11,6 +11,8 @@ import re # for regular expressions
 import collections # for deque
 import jsonpickle # allows saving and reloading of the twitchUser object list to file in json format
 
+import keyboard # for pausing the talk queue while ctrl is held on push to talk to prevent interruption
+
 for handler in logging.root.handlers[:]:
 	logging.root.removeHandler(handler)
 logging.basicConfig(format='%(asctime)s (%(threadName)-10s) [%(levelname)s] %(message)s', filename= 'errors.log',filemode = "w", level=logging.INFO)
@@ -135,7 +137,7 @@ class IRCBot(threading.Thread):
 		logging.info("in close in thread")
 		try:
 			# send closing message immediately
-			self.irc.send(("PRIVMSG " + self.channel + " :" + str("closing opponent bot") + "\r\n").encode('utf8'))
+			self.irc.send(("PRIVMSG " + self.channel + " :" + str("closing tts bot") + "\r\n").encode('utf8'))
 		except Exception as e:
 			logging.error("In close")
 			logging.error(str(e))
@@ -200,6 +202,28 @@ class IRCBot(threading.Thread):
 
 			if (wordList[0] == "!speed") or (wordList[0] == "!voicespeed"):
 				self.setSpeed(userName, message)
+
+			if (wordList[0] == "!volume") and (self.broadcasterName.lower() == userName.lower()):
+				self.setVolume(userName, message)
+
+			if (wordList[0] == "!closetts") and (self.broadcasterName.lower() == userName.lower()):
+				self.close()
+
+	def setVolume(self, userName, message):
+		wordList = message.split()
+		if wordList > 1:
+			try:
+				volume = float(wordList[1])
+			except Exception as e:
+				print("Cannot Cast to Float {}".format(wordList[1]))
+				print(str(e))
+				return
+			if self.mytts:
+				if self.mytts.tts:
+					if self.mytts.tts.engine: 
+						self.mytts.tts.engine.setProperty('volume',volume)
+						self.SendPrivateMessageToIRC("TTS Volume Set to : {}".format(volume))
+
 
 	def setSpeed(self, userName, message):
 		wordList = message.split()
@@ -576,6 +600,10 @@ class ttsSpeech(threading.Thread):
 					self.tts.engine.setProperty('voice',voices[message.voiceNumber].id)
 					self.tts.engine.setProperty('rate', message.voiceRate)
 					print ("{} said , {} : voice {}".format(message.userName, message.message, message.voiceNumber))
+
+					#pause sending a new message to the bot while the ctrl key is pressed to prevent being interupted when using push to talk
+					while keyboard.is_pressed('left ctrl'):
+						pass
 
 					if (self.previousUserName.lower() == message.userName.lower()):
 						self.tts.say(message.message)
