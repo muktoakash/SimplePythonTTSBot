@@ -4,14 +4,12 @@ A simple partial implementation of the IRC protocol for twitch chat made in pyth
 This python bot requires the following non standard python packages to be installed.
 
 pyttsx3
-
-This can be installed on the command line using "pip install pyttsx3"
-
-pyttsx3 Text to Speech (TTS) library for Python 2 and 3. Works without internet connection or delay. Supports multiple TTS engines, including Sapi5, nsss, and espeak.
-
+keyboard
 jsonpickle
 
-This can be installed on the command line using "pip install jsonpickle"
+This can be installed on the command line using "pip install pyttsx3 keyboard jsonpickle"
+
+pyttsx3 Text to Speech (TTS) library for Python 2 and 3. Works without internet connection or delay. Supports multiple TTS engines, including Sapi5, nsss, and espeak.
 
 This bot was written and tested on Windows 10 (Using espeak/SAPI5), and uses the Microsoft Voices accessible publicly in the language options.
 
